@@ -91,7 +91,7 @@ build_package() {
 
     # Run CMake with the specified configurations
     echo "Running cmake for package '${package_name}'..."
-    cmake -DCMAKE_INSTALL_PREFIX="${install_dir}" "${additional_args}" "$src_dir"
+    cmake -DCMAKE_INSTALL_PREFIX="${install_dir}" "${additional_args[@]}" "$src_dir"
 
     # Install if flag
     if [[ "$install_flag" == 1 ]]; then

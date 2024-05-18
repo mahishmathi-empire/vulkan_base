@@ -45,7 +45,7 @@
 3. Build the package.
   
     ```bash
-    [~/me_ws/src] $ ./daagudumoothalu/build.sh -p daagudumoothalu -c -i -- -DCMAKE_BUILD_TYPE=Debug
+    [~/me_ws/src] $ ./daagudumoothalu/build.sh -p daagudumoothalu -c -i -- -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTS=ON
     ```
 
     - `-p` specifies the package name.
@@ -53,6 +53,7 @@
     - `-i` installs the package.
     - `--` passes the arguments to `cmake`.
     -  `-DCMAKE_BUILD_TYPE=Debug` specifies the build type.
+    -  `-DENABLE_TESTS=ON` enables the tests.
 
 ## Test
 

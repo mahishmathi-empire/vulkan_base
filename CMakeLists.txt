@@ -121,7 +121,7 @@ install(DIRECTORY assets/
 )
 
 # tests
-set(ENABLE_TESTS ON)
+option(ENABLE_TESTS "Enable tests" ON)
 if(${ENABLE_TESTS})
   add_subdirectory(test)
 endif()
