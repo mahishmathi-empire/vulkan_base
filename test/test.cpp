@@ -3,13 +3,15 @@
 int main()
 {
   GLFWwindow* window;
+  VkInstance instance;
 
   try
   {
     initWindow(1400, 1400, "Daagudumoothalu", window);
-    testVulkan();
+    createVkInstance("Daagudumoothalu", instance);
     testMath();
     mainLoop(window);
+    cleanupVulkan(&instance);
     cleanup(window);
   }
   catch (const std::exception& e)

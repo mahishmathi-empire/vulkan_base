@@ -5,8 +5,10 @@
 
 void initVulkan();
 
-void createVkInstance();
+void createVkInstance(char const* title, VkInstance& instance);
 
 void testVulkan();
+
+void cleanupVulkan(VkInstance *instance);
 
 #endif // DAAGUDUMOOTHALU_VULKAN_HPP
