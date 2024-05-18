@@ -4,6 +4,11 @@ project(daagudumoothalu VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# cmake flags
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNDEBUG")
+endif()
+
 set(CMAKE_INSTALL_DIR share/${PROJECT_NAME}/cmake)
 
 find_package(Vulkan REQUIRED)

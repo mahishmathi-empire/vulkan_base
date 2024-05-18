@@ -8,8 +8,21 @@ void testVulkan()
   std::cout << extensionCount << " extensions supported" << std::endl;
 }
 
-void createVkInstance(char const* title, VkInstance& instance)
+void initVulkan(const std::vector<const char*>& validationLayers, char const* title,
+                VkInstance& instance, VkDebugUtilsMessengerEXT& debugMessenger)
 {
+  createVkInstance(validationLayers, title, instance);
+  setupDebugMessenger(instance, debugMessenger);
+}
+
+void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
+                      VkInstance& instance)
+{
+  if (enableValidationLayers && !checkValidationLayerSupport(validationLayers))
+  {
+    throw std::runtime_error("validation layers requested, but not available!");
+  }
+
   VkApplicationInfo appInfo = {};
   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   appInfo.pApplicationName = title;
@@ -22,14 +35,27 @@ void createVkInstance(char const* title, VkInstance& instance)
   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   createInfo.pApplicationInfo = &appInfo;
 
-  uint32_t glfwExtensionCount = 0;
-  const char** glfwExtensions;
-  glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+  std::vector<const char*> extensions;
+  getRequiredExtensions(extensions);
 
-  createInfo.enabledExtensionCount = glfwExtensionCount;
-  createInfo.ppEnabledExtensionNames = glfwExtensions;
+  createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+  createInfo.ppEnabledExtensionNames = extensions.data();
 
-  createInfo.enabledLayerCount = 0;
+  VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+
+  if (enableValidationLayers)
+  {
+    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+    createInfo.ppEnabledLayerNames = validationLayers.data();
+
+    populateDebugMessengerCreateInfo(debugCreateInfo);
+    createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+  }
+  else
+  {
+    createInfo.enabledLayerCount = 0;
+    createInfo.pNext = nullptr;
+  }
 
   if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
   {
@@ -37,7 +63,125 @@ void createVkInstance(char const* title, VkInstance& instance)
   }
 }
 
-void cleanupVulkan(VkInstance *instance)
+bool checkValidationLayerSupport(const std::vector<const char*>& validationLayers)
 {
+  uint32_t layerCount;
+  vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+  std::vector<VkLayerProperties> availableLayers(layerCount);
+  vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+  for (const char* layerName : validationLayers)
+  {
+    bool layerFound = false;
+
+    for (const auto& layerProperties : availableLayers)
+    {
+      if (strcmp(layerName, layerProperties.layerName) == 0)
+      {
+        layerFound = true;
+        break;
+      }
+    }
+
+    if (!layerFound)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void getRequiredExtensions(std::vector<const char*>& extensions)
+{
+  uint32_t glfwExtensionCount = 0;
+  const char** glfwExtensions;
+  glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+  for (uint32_t i = 0; i < glfwExtensionCount; i++)
+  {
+    extensions.push_back(glfwExtensions[i]);
+  }
+
+  if (enableValidationLayers)
+  {
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+  }
+}
+
+void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+{
+  createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+  createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+  createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                           VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                           VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+  createInfo.pfnUserCallback = debugCallback;
+}
+
+void setupDebugMessenger(VkInstance instance, VkDebugUtilsMessengerEXT& debugMessenger)
+{
+  if (!enableValidationLayers)
+    return;
+
+  VkDebugUtilsMessengerCreateInfoEXT createInfo;
+  populateDebugMessengerCreateInfo(createInfo);
+
+  if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) !=
+      VK_SUCCESS)
+  {
+    throw std::runtime_error("failed to set up debug messenger!");
+  }
+}
+
+VkResult CreateDebugUtilsMessengerEXT(
+    VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+  auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+      instance, "vkCreateDebugUtilsMessengerEXT");
+  if (func != nullptr)
+  {
+    return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+  }
+  else
+  {
+    return VK_ERROR_EXTENSION_NOT_PRESENT;
+  }
+}
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                   VkDebugUtilsMessengerEXT debugMessenger,
+                                   const VkAllocationCallbacks* pAllocator)
+{
+  auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+      instance, "vkDestroyDebugUtilsMessengerEXT");
+  if (func != nullptr)
+  {
+    func(instance, debugMessenger, pAllocator);
+  }
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL
+debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+              VkDebugUtilsMessageTypeFlagsEXT messageType,
+              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+{
+  std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+  return VK_FALSE;
+}
+
+void cleanupVulkan(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger)
+{
+  if (enableValidationLayers)
+  {
+    DestroyDebugUtilsMessengerEXT(*instance, *debugMessenger, nullptr);
+  }
+
   vkDestroyInstance(*instance, nullptr);
 }
