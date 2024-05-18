@@ -24,7 +24,9 @@
 - [ ] MacOS -
 - [ ] Windows -
 
-## setup
+## Setup
+
+0. Install the packages and dependecies followin the instructions in the [Vulkan Tutorials](https://docs.vulkan.org/tutorial/latest/02_Development_environment.html) page.
 
 1. Create a workspace directory and change to it.
   
