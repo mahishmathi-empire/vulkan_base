@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstring>
 #include <optional>
+#include <set>
 
 #ifdef ENABLE_VALIDATION_LAYERS
 const bool enableValidationLayers = true;
@@ -15,33 +16,42 @@ const bool enableValidationLayers = false;
 struct QueueFamilyIndices
 {
   std::optional<uint32_t> graphicsFamily;
+  std::optional<uint32_t> presentFamily;
 
   bool isComplete()
   {
-    return graphicsFamily.has_value();
+    return graphicsFamily.has_value() && presentFamily.has_value();
   }
 };
 
 void initVulkan(const std::vector<const char*>& validationLayers, char const* title,
                 VkInstance& instance, VkDebugUtilsMessengerEXT& debugMessenger,
-                VkDevice& device);
+                VkPhysicalDevice physicalDevice,
+                VkDevice& device, VkSurfaceKHR& surface,
+                VkQueue& graphicsQueue, VkQueue& presentQueue);
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
                       VkInstance& instance);
 
 void testVulkan();
 
+// surface
+void createSurface(VkInstance instance, GLFWwindow* window, VkSurfaceKHR& surface);
+
 // logical device methods
 void createLogicalDevice(VkPhysicalDevice physicalDevice,
                          const std::vector<const char*>& validationLayers,
-                         VkDevice& device);
+                         VkDevice& device, VkSurfaceKHR& surface, 
+                         VkQueue& graphicsQueue, VkQueue& presentQueue);
 
 // physical device methods
 bool isDeviceSuitable(VkPhysicalDevice device);
 
-void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice);
+void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice,
+                        VkSurfaceKHR& surface);
 
-void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices& indices);
+void findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR& surface,
+                       QueueFamilyIndices& indices);
 
 // validation layer methods
 
@@ -70,7 +80,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 
 // cleanup methods
 
-void cleanupVulkan(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger,
-                   VkDevice* device);
+void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
+                   VkDebugUtilsMessengerEXT* debugMessenger, VkDevice* device);
 
 #endif  // DAAGUDUMOOTHALU_VULKAN_HPP

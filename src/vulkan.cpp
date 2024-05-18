@@ -10,36 +10,48 @@ void testVulkan()
 
 void initVulkan(const std::vector<const char*>& validationLayers, char const* title,
                 VkInstance& instance, VkDebugUtilsMessengerEXT& debugMessenger,
-                VkDevice& device)
+                VkPhysicalDevice physicalDevice, VkDevice& device, VkSurfaceKHR& surface,
+                VkQueue& graphicsQueue, VkQueue& presentQueue)
 {
   createVkInstance(validationLayers, title, instance);
   setupDebugMessenger(instance, debugMessenger);
 
-  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-  pickPhysicalDevice(instance, physicalDevice);
+  pickPhysicalDevice(instance, physicalDevice, surface);
 
-  createLogicalDevice(physicalDevice, validationLayers, device);
+  createLogicalDevice(physicalDevice, validationLayers, device, surface, graphicsQueue,
+                      presentQueue);
+}
 
-  QueueFamilyIndices indices;
-  findQueueFamilies(physicalDevice, indices);
-
-  VkQueue graphicsQueue;
-  vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+void createSurface(VkInstance instance, GLFWwindow* window, VkSurfaceKHR& surface)
+{
+  if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+  {
+    throw std::runtime_error("failed to create window surface!");
+  }
 }
 
 void createLogicalDevice(VkPhysicalDevice physicalDevice,
                          const std::vector<const char*>& validationLayers,
-                         VkDevice& device)
+                         VkDevice& device, VkSurfaceKHR& surface, VkQueue& graphicsQueue,
+                         VkQueue& presentQueue)
 {
   QueueFamilyIndices indices;
-  findQueueFamilies(physicalDevice, indices);
+  findQueueFamilies(physicalDevice, surface, indices);
 
-  VkDeviceQueueCreateInfo queueCreateInfo{};
-  queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-  queueCreateInfo.queueCount = 1;
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+  std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(),
+                                            indices.presentFamily.value()};
+
   float queuePriority = 1.0f;
-  queueCreateInfo.pQueuePriorities = &queuePriority;
+  for (uint32_t queueFamily : uniqueQueueFamilies)
+  {
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = queueFamily;
+    queueCreateInfo.queueCount = 1;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+    queueCreateInfos.push_back(queueCreateInfo);
+  }
 
   VkPhysicalDeviceFeatures deviceFeatures{};
 
@@ -47,7 +59,7 @@ void createLogicalDevice(VkPhysicalDevice physicalDevice,
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
   createInfo.queueCreateInfoCount = 1;
-  createInfo.pQueueCreateInfos = &queueCreateInfo;
+  createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
   createInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -67,6 +79,9 @@ void createLogicalDevice(VkPhysicalDevice physicalDevice,
   {
     throw std::runtime_error("failed to create logical device!");
   }
+
+  vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+  vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 }
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
@@ -117,7 +132,7 @@ void createVkInstance(const std::vector<const char*>& validationLayers, char con
   }
 }
 
-bool isDeviceSuitable(VkPhysicalDevice device)
+bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface)
 {
   VkPhysicalDeviceProperties deviceProperties;
   VkPhysicalDeviceFeatures deviceFeatures;
@@ -125,13 +140,14 @@ bool isDeviceSuitable(VkPhysicalDevice device)
   vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
   QueueFamilyIndices indices;
-  findQueueFamilies(device, indices);
+  findQueueFamilies(device, surface, indices);
 
   return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
          deviceFeatures.geometryShader && indices.isComplete();
 }
 
-void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice)
+void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice,
+                        VkSurfaceKHR& surface)
 {
   uint32_t deviceCount = 0;
   vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -146,7 +162,7 @@ void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice)
 
   for (const auto& device : devices)
   {
-    if (isDeviceSuitable(device))
+    if (isDeviceSuitable(device, surface))
     {
       physicalDevice = device;
       break;
@@ -159,7 +175,8 @@ void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice)
   }
 }
 
-void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices& indices)
+void findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR& surface,
+                       QueueFamilyIndices& indices)
 {
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -168,12 +185,21 @@ void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices& indices)
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
                                            queueFamilies.data());
 
+  VkBool32 presentSupport = false;
+
   int i = 0;
   for (const auto& queueFamily : queueFamilies)
   {
     if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
     {
       indices.graphicsFamily = i;
+    }
+
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+    if (presentSupport)
+    {
+      indices.presentFamily = i;
     }
 
     if (indices.isComplete())
@@ -298,13 +324,15 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
   return VK_FALSE;
 }
 
-void cleanupVulkan(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger,
-                   VkDevice* device)
+void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
+                   VkDebugUtilsMessengerEXT* debugMessenger, VkDevice* device)
 {
   if (enableValidationLayers)
   {
     DestroyDebugUtilsMessengerEXT(*instance, *debugMessenger, nullptr);
   }
+
+  vkDestroySurfaceKHR(*instance, *surface, nullptr);
 
   vkDestroyDevice(*device, nullptr);
 
