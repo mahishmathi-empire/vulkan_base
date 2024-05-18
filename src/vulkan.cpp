@@ -9,10 +9,64 @@ void testVulkan()
 }
 
 void initVulkan(const std::vector<const char*>& validationLayers, char const* title,
-                VkInstance& instance, VkDebugUtilsMessengerEXT& debugMessenger)
+                VkInstance& instance, VkDebugUtilsMessengerEXT& debugMessenger,
+                VkDevice& device)
 {
   createVkInstance(validationLayers, title, instance);
   setupDebugMessenger(instance, debugMessenger);
+
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+  pickPhysicalDevice(instance, physicalDevice);
+
+  createLogicalDevice(physicalDevice, validationLayers, device);
+
+  QueueFamilyIndices indices;
+  findQueueFamilies(physicalDevice, indices);
+
+  VkQueue graphicsQueue;
+  vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+}
+
+void createLogicalDevice(VkPhysicalDevice physicalDevice,
+                         const std::vector<const char*>& validationLayers,
+                         VkDevice& device)
+{
+  QueueFamilyIndices indices;
+  findQueueFamilies(physicalDevice, indices);
+
+  VkDeviceQueueCreateInfo queueCreateInfo{};
+  queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+  queueCreateInfo.queueCount = 1;
+  float queuePriority = 1.0f;
+  queueCreateInfo.pQueuePriorities = &queuePriority;
+
+  VkPhysicalDeviceFeatures deviceFeatures{};
+
+  VkDeviceCreateInfo createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+  createInfo.queueCreateInfoCount = 1;
+  createInfo.pQueueCreateInfos = &queueCreateInfo;
+
+  createInfo.pEnabledFeatures = &deviceFeatures;
+
+  createInfo.enabledExtensionCount = 0;
+
+  if (enableValidationLayers)
+  {
+    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+    createInfo.ppEnabledLayerNames = validationLayers.data();
+  }
+  else
+  {
+    createInfo.enabledLayerCount = 0;
+  }
+
+  if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+  {
+    throw std::runtime_error("failed to create logical device!");
+  }
 }
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
@@ -60,6 +114,74 @@ void createVkInstance(const std::vector<const char*>& validationLayers, char con
   if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
   {
     throw std::runtime_error("failed to create instance!");
+  }
+}
+
+bool isDeviceSuitable(VkPhysicalDevice device)
+{
+  VkPhysicalDeviceProperties deviceProperties;
+  VkPhysicalDeviceFeatures deviceFeatures;
+  vkGetPhysicalDeviceProperties(device, &deviceProperties);
+  vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+  QueueFamilyIndices indices;
+  findQueueFamilies(device, indices);
+
+  return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+         deviceFeatures.geometryShader && indices.isComplete();
+}
+
+void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice)
+{
+  uint32_t deviceCount = 0;
+  vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+  if (deviceCount == 0)
+  {
+    throw std::runtime_error("failed to find GPUs with Vulkan support!");
+  }
+
+  std::vector<VkPhysicalDevice> devices(deviceCount);
+  vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+  for (const auto& device : devices)
+  {
+    if (isDeviceSuitable(device))
+    {
+      physicalDevice = device;
+      break;
+    }
+  }
+
+  if (physicalDevice == VK_NULL_HANDLE)
+  {
+    throw std::runtime_error("failed to find a suitable GPU!");
+  }
+}
+
+void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices& indices)
+{
+  uint32_t queueFamilyCount = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+  std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
+                                           queueFamilies.data());
+
+  int i = 0;
+  for (const auto& queueFamily : queueFamilies)
+  {
+    if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+    {
+      indices.graphicsFamily = i;
+    }
+
+    if (indices.isComplete())
+    {
+      break;
+    }
+
+    i++;
   }
 }
 
@@ -176,12 +298,15 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
   return VK_FALSE;
 }
 
-void cleanupVulkan(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger)
+void cleanupVulkan(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger,
+                   VkDevice* device)
 {
   if (enableValidationLayers)
   {
     DestroyDebugUtilsMessengerEXT(*instance, *debugMessenger, nullptr);
   }
+
+  vkDestroyDevice(*device, nullptr);
 
   vkDestroyInstance(*instance, nullptr);
 }

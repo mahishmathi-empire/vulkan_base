@@ -68,3 +68,7 @@
     ```bash
     [~/me_ws/src] $ ./test
     ```
+
+## TODO
+
+- [ ] Create a struct to hold Vulkan objects.

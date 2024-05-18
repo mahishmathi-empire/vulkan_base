@@ -4,24 +4,52 @@
 #include "daagudumoothalu/glfwindow.hpp"
 #include <vector>
 #include <cstring>
+#include <optional>
 
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
+#ifdef ENABLE_VALIDATION_LAYERS
 const bool enableValidationLayers = true;
+#else
+const bool enableValidationLayers = false;
 #endif
 
+struct QueueFamilyIndices
+{
+  std::optional<uint32_t> graphicsFamily;
+
+  bool isComplete()
+  {
+    return graphicsFamily.has_value();
+  }
+};
+
 void initVulkan(const std::vector<const char*>& validationLayers, char const* title,
-                VkInstance& instance, VkDebugUtilsMessengerEXT& debugMessenger);
+                VkInstance& instance, VkDebugUtilsMessengerEXT& debugMessenger,
+                VkDevice& device);
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
                       VkInstance& instance);
 
 void testVulkan();
 
+// logical device methods
+void createLogicalDevice(VkPhysicalDevice physicalDevice,
+                         const std::vector<const char*>& validationLayers,
+                         VkDevice& device);
+
+// physical device methods
+bool isDeviceSuitable(VkPhysicalDevice device);
+
+void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice);
+
+void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices& indices);
+
+// validation layer methods
+
 bool checkValidationLayerSupport(const std::vector<const char*>& validationLayers);
 
 void getRequiredExtensions(std::vector<const char*>& extensions);
+
+// debug methods
 
 void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
@@ -40,6 +68,9 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
               VkDebugUtilsMessageTypeFlagsEXT messageType,
               const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
-void cleanupVulkan(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger);
+// cleanup methods
+
+void cleanupVulkan(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger,
+                   VkDevice* device);
 
 #endif  // DAAGUDUMOOTHALU_VULKAN_HPP
