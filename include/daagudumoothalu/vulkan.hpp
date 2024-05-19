@@ -44,12 +44,52 @@ void initVulkan(const std::vector<const char*>& validationLayers, char const* ti
                 VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent,
                 std::vector<VkImageView>& swapChainImageViews,
                 VkPipelineLayout& pipelineLayout, VkRenderPass& renderPass,
-                VkPipeline& graphicsPipeline);
+                VkPipeline& graphicsPipeline,
+                std::vector<VkFramebuffer>& swapChainFramebuffers,
+                VkCommandPool& commandPool, VkCommandBuffer commandBuffer,
+                VkSemaphore& imageAvailableSemaphore,
+                VkSemaphore& renderFinishedSemaphore, VkFence& inFlightFence);
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
                       VkInstance& instance);
 
 void testVulkan();
+
+void mainLoop(GLFWwindow* window, VkDevice device, VkQueue graphicsQueue,
+              VkQueue presentQueue, VkSwapchainKHR swapChain,
+              std::vector<VkImage> swapChainImages, VkSemaphore imageAvailableSemaphore,
+              VkSemaphore renderFinishedSemaphore, VkFence inFlightFence,
+              VkCommandBuffer commandBuffer, VkPipeline graphicsPipeline,
+              VkRenderPass renderPass, VkExtent2D swapChainExtent,
+              std::vector<VkFramebuffer> swapChainFramebuffers);
+
+void drawFrame(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue,
+               VkSwapchainKHR swapChain, std::vector<VkImage> swapChainImages,
+               VkSemaphore imageAvailableSemaphore, VkSemaphore renderFinishedSemaphore,
+               VkFence inFlightFence, VkCommandBuffer commandBuffer,
+               VkPipeline graphicsPipeline, VkRenderPass renderPass,
+               VkExtent2D swapChainExtent,
+               std::vector<VkFramebuffer> swapChainFramebuffers);
+
+void createSyncObjects(VkDevice device, VkSemaphore& imageAvailableSemaphore,
+                       VkSemaphore& renderFinishedSemaphore, VkFence& inFlightFence);
+
+// command buffer methods
+void createCommandPool(VkDevice device, VkCommandPool& commandPool,
+                       VkPhysicalDevice physicalDevice, VkSurfaceKHR& surface);
+
+void createCommandBuffer(VkDevice device, VkCommandPool commandPool,
+                         VkCommandBuffer& commandBuffer);
+
+void recordCommandBuffer(VkCommandBuffer commandBuffer, VkRenderPass renderPass,
+                         VkExtent2D swapChainExtent, VkFramebuffer* swapChainFramebuffers,
+                         uint32_t imageIndex, VkPipeline graphicsPipeline);
+
+// framebuffers
+void createFramebuffers(VkDevice device,
+                        const std::vector<VkImageView>& swapChainImageViews,
+                        VkRenderPass renderPass, VkExtent2D swapChainExtent,
+                        std::vector<VkFramebuffer>& swapChainFramebuffers);
 
 // graphics pipeline methods
 void createGraphicsPipeline(VkDevice device, VkPipelineLayout& pipelineLayout,
@@ -143,6 +183,10 @@ void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
                    VkSwapchainKHR* swapChain,
                    std::vector<VkImageView>& swapChainImageViews,
                    VkPipelineLayout* pipelineLayout, VkRenderPass* renderPass,
-                   VkPipeline* graphicsPipeline);
+                   VkPipeline* graphicsPipeline,
+                   std::vector<VkFramebuffer>& swapChainFramebuffers,
+                   VkCommandPool* commandPool, VkCommandBuffer* commandBuffer,
+                   VkSemaphore* imageAvailableSemaphore,
+                   VkSemaphore* renderFinishedSemaphore, VkFence* inFlightFence);
 
 #endif  // DAAGUDUMOOTHALU_VULKAN_HPP

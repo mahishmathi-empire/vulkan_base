@@ -9,8 +9,6 @@
 
 void initWindow(int width, int height, const char* title, GLFWwindow*& window);
 
-void mainLoop(GLFWwindow* window);
-
 void cleanup(GLFWwindow* window);
 
 #endif // DAAGUDUMOOTHALU_GLFWINDOW_HPP

@@ -13,14 +13,6 @@ void initWindow(int width, int height, const char* title, GLFWwindow*& window)
   window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 }
 
-void mainLoop(GLFWwindow* window)
-{
-  while (!glfwWindowShouldClose(window))
-  {
-    glfwPollEvents();
-  }
-}
-
 void cleanup(GLFWwindow* window)
 {
   glfwDestroyWindow(window);

@@ -16,12 +16,18 @@ int main()
   VkPipelineLayout pipelineLayout;
   VkRenderPass renderPass;
   VkPipeline graphicsPipeline;
+  VkCommandPool commandPool;
+  VkCommandBuffer commandBuffer;
+  VkSemaphore imageAvailableSemaphore;
+  VkSemaphore renderFinishedSemaphore;
+  VkFence inFlightFence;
 
   const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
   const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
   std::vector<VkImage> swapChainImages;
   std::vector<VkImageView> swapChainImageViews;
+  std::vector<VkFramebuffer> swapChainFramebuffers;
 
   try
   {
@@ -30,11 +36,17 @@ int main()
                physicalDevice, device, surface, graphicsQueue, presentQueue,
                deviceExtensions, window, swapChain, swapChainImages, swapChainImageFormat,
                swapChainExtent, swapChainImageViews, pipelineLayout, renderPass,
-               graphicsPipeline);
-    testMath();
-    mainLoop(window);
+               graphicsPipeline, swapChainFramebuffers, commandPool, commandBuffer,
+               imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
+    // testMath();
+    mainLoop(window, device, graphicsQueue, presentQueue, swapChain, swapChainImages,
+             imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence,
+             commandBuffer, graphicsPipeline, renderPass, swapChainExtent,
+             swapChainFramebuffers);
     cleanupVulkan(&surface, &instance, &debugMessenger, &device, &swapChain,
-                  swapChainImageViews, &pipelineLayout, &renderPass, &graphicsPipeline);
+                  swapChainImageViews, &pipelineLayout, &renderPass, &graphicsPipeline,
+                  swapChainFramebuffers, &commandPool, &commandBuffer,
+                  &imageAvailableSemaphore, &renderFinishedSemaphore, &inFlightFence);
     cleanup(window);
   }
   catch (const std::exception& e)
