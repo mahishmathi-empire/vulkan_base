@@ -19,7 +19,7 @@ void initVulkan(const std::vector<const char*>& validationLayers, char const* ti
                 VkPipelineLayout& pipelineLayout, VkRenderPass& renderPass,
                 VkPipeline& graphicsPipeline,
                 std::vector<VkFramebuffer>& swapChainFramebuffers,
-                VkCommandPool& commandPool, VkCommandBuffer commandBuffer,
+                VkCommandPool& commandPool, VkCommandBuffer& commandBuffer,
                 VkSemaphore& imageAvailableSemaphore,
                 VkSemaphore& renderFinishedSemaphore, VkFence& inFlightFence)
 {
@@ -77,7 +77,7 @@ void drawFrame(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue,
   vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore,
                         VK_NULL_HANDLE, &imageIndex);
 
-  vkResetCommandBuffer(commandBuffer, 0);
+  vkResetCommandBuffer(commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
   recordCommandBuffer(commandBuffer, renderPass, swapChainExtent,
                       swapChainFramebuffers.data(), imageIndex, graphicsPipeline);
 
@@ -111,6 +111,7 @@ void drawFrame(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue,
   VkSwapchainKHR swapChains[] = {swapChain};
   presentInfo.swapchainCount = 1;
   presentInfo.pSwapchains = swapChains;
+
   presentInfo.pImageIndices = &imageIndex;
 
   vkQueuePresentKHR(presentQueue, &presentInfo);
@@ -124,6 +125,7 @@ void createSyncObjects(VkDevice device, VkSemaphore& imageAvailableSemaphore,
 
   VkFenceCreateInfo fenceInfo{};
   fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
   if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) !=
           VK_SUCCESS ||
@@ -268,12 +270,22 @@ void createRenderPass(VkDevice device, VkFormat swapChainImageFormat,
   subpass.colorAttachmentCount = 1;
   subpass.pColorAttachments = &colorAttachmentRef;
 
+  VkSubpassDependency dependency{};
+  dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+  dependency.dstSubpass = 0;
+  dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.srcAccessMask = 0;
+  dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
   VkRenderPassCreateInfo renderPassInfo{};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
   renderPassInfo.attachmentCount = 1;
   renderPassInfo.pAttachments = &colorAttachment;
   renderPassInfo.subpassCount = 1;
   renderPassInfo.pSubpasses = &subpass;
+  renderPassInfo.dependencyCount = 1;
+  renderPassInfo.pDependencies = &dependency;
 
   if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
   {

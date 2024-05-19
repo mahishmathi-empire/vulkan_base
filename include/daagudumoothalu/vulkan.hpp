@@ -46,7 +46,7 @@ void initVulkan(const std::vector<const char*>& validationLayers, char const* ti
                 VkPipelineLayout& pipelineLayout, VkRenderPass& renderPass,
                 VkPipeline& graphicsPipeline,
                 std::vector<VkFramebuffer>& swapChainFramebuffers,
-                VkCommandPool& commandPool, VkCommandBuffer commandBuffer,
+                VkCommandPool& commandPool, VkCommandBuffer& commandBuffer,
                 VkSemaphore& imageAvailableSemaphore,
                 VkSemaphore& renderFinishedSemaphore, VkFence& inFlightFence);
 
