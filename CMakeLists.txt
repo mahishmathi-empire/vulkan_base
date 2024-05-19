@@ -20,7 +20,7 @@ include_directories(
 )
 
 # add libraries
-add_library(glf_vulkan
+add_library(glf_vulkan SHARED
   src/glfwindow.cpp
   src/vulkan.cpp
 )
@@ -30,7 +30,7 @@ target_link_libraries(glf_vulkan
   glfw
 )
 
-add_library(math
+add_library(math SHARED
   src/math.cpp
 )
 target_link_libraries(math

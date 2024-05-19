@@ -6,6 +6,9 @@
 #include <cstring>
 #include <optional>
 #include <set>
+#include <cstdint>    // Necessary for uint32_t
+#include <limits>     // Necessary for std::numeric_limits
+#include <algorithm>  // Necessary for std::clamp
 
 #ifdef ENABLE_VALIDATION_LAYERS
 const bool enableValidationLayers = true;
@@ -24,16 +27,46 @@ struct QueueFamilyIndices
   }
 };
 
+struct SwapChainSupportDetails
+{
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
+};
+
 void initVulkan(const std::vector<const char*>& validationLayers, char const* title,
                 VkInstance& instance, VkDebugUtilsMessengerEXT& debugMessenger,
-                VkPhysicalDevice physicalDevice,
-                VkDevice& device, VkSurfaceKHR& surface,
-                VkQueue& graphicsQueue, VkQueue& presentQueue);
+                VkPhysicalDevice physicalDevice, VkDevice& device, VkSurfaceKHR& surface,
+                VkQueue& graphicsQueue, VkQueue& presentQueue,
+                const std::vector<const char*>& deviceExtensions, GLFWwindow* window,
+                VkSwapchainKHR& swapChain, std::vector<VkImage>& swapChainImages,
+                VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent);
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
                       VkInstance& instance);
 
 void testVulkan();
+
+// swap chain methods
+bool checkDeviceExtensionSupport(VkPhysicalDevice device,
+                                 const std::vector<const char*>& deviceExtensions);
+
+void querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR& surface,
+                           SwapChainSupportDetails& swapChainSupport);
+
+void chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats,
+                             VkSurfaceFormatKHR& surfaceFormat);
+
+void chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes,
+                           VkPresentModeKHR& presentMode);
+
+void chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window,
+                      VkExtent2D& extent);
+
+void createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device,
+                     VkSurfaceKHR& surface, GLFWwindow* window,
+                     VkSwapchainKHR& swapChain, std::vector<VkImage>& swapChainImages,
+                     VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent);
 
 // surface
 void createSurface(VkInstance instance, GLFWwindow* window, VkSurfaceKHR& surface);
@@ -41,14 +74,17 @@ void createSurface(VkInstance instance, GLFWwindow* window, VkSurfaceKHR& surfac
 // logical device methods
 void createLogicalDevice(VkPhysicalDevice physicalDevice,
                          const std::vector<const char*>& validationLayers,
-                         VkDevice& device, VkSurfaceKHR& surface, 
-                         VkQueue& graphicsQueue, VkQueue& presentQueue);
+                         VkDevice& device, VkSurfaceKHR& surface, VkQueue& graphicsQueue,
+                         VkQueue& presentQueue,
+                         const std::vector<const char*>& deviceExtensions);
 
 // physical device methods
-bool isDeviceSuitable(VkPhysicalDevice device);
+bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface,
+                      const std::vector<const char*>& deviceExtensions);
 
 void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice& physicalDevice,
-                        VkSurfaceKHR& surface);
+                        VkSurfaceKHR& surface,
+                        const std::vector<const char*>& deviceExtensions);
 
 void findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR& surface,
                        QueueFamilyIndices& indices);
@@ -81,6 +117,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 // cleanup methods
 
 void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
-                   VkDebugUtilsMessengerEXT* debugMessenger, VkDevice* device);
+                   VkDebugUtilsMessengerEXT* debugMessenger, VkDevice* device,
+                   VkSwapchainKHR* swapChain);
 
 #endif  // DAAGUDUMOOTHALU_VULKAN_HPP
