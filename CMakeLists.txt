@@ -48,14 +48,36 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
 function(compile_shader SHADER)
   get_filename_component(FILE_NAME ${SHADER} NAME)
   set(SPIRV "${CMAKE_BINARY_DIR}/shaders/${FILE_NAME}.spv")
+  
+  # Create the shaders directory if it doesn't exist
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders/")
+  
   add_custom_command(
     OUTPUT ${SPIRV}
-    COMMAND ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} -V ${SHADER} -o ${SPIRV}
+    COMMAND ${CMAKE_COMMAND} -E echo "CC Running: glslc ${SHADER} -o ${SPIRV}"
+    COMMAND glslc ${SHADER} -o ${SPIRV}
     DEPENDS ${SHADER}
     COMMENT "Compiling shader ${SHADER}"
   )
-  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+  
+  # Create a custom target for the SPIR-V binary file
+  add_custom_target(
+    ${FILE_NAME}_spirv
+    DEPENDS ${SPIRV}
+  )
+  
+  # Update SPIRV_BINARY_FILES in the parent scope
+  set(SPIRV_BINARY_FILES ${SPIRV_BINARY_FILES} ${FILE_NAME}_spirv PARENT_SCOPE)
+
+  # install
+  install(
+    FILES ${SPIRV}
+    DESTINATION shaders
+  )
 endfunction()
+
+# spirv binary files
+set(SPIRV_BINARY_FILES "")
 
 # Compile shaders
 foreach(GLSL ${GLSL_SOURCE_FILES})
@@ -63,8 +85,8 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
 endforeach()
 
 add_custom_target(
-    Shaders ALL
-    DEPENDS ${SPIRV_BINARY_FILES}
+  Shaders ALL
+  DEPENDS ${SPIRV_BINARY_FILES}
 )
 
 add_dependencies(glf_vulkan Shaders)
@@ -115,11 +137,11 @@ install(DIRECTORY include/
 )
 
 # Install shaders
-if(EXISTS shaders/)
-  install(DIRECTORY shaders/ 
-    DESTINATION shaders
-  )
-endif()
+# if(EXISTS shaders/)
+#   install(DIRECTORY shaders/ 
+#     DESTINATION shaders
+#   )
+# endif()
 
 install(DIRECTORY assets/ 
   DESTINATION assets

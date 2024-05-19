@@ -13,6 +13,8 @@ int main()
   VkSwapchainKHR swapChain;
   VkFormat swapChainImageFormat;
   VkExtent2D swapChainExtent;
+  VkShaderModule vertShaderModule;
+  VkShaderModule fragShaderModule;
 
   const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
   const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -26,11 +28,11 @@ int main()
     initVulkan(validationLayers, "Daagudumoothalu", instance, debugMessenger,
                physicalDevice, device, surface, graphicsQueue, presentQueue,
                deviceExtensions, window, swapChain, swapChainImages, swapChainImageFormat,
-               swapChainExtent, swapChainImageViews);
+               swapChainExtent, swapChainImageViews, vertShaderModule, fragShaderModule);
     testMath();
     mainLoop(window);
     cleanupVulkan(&surface, &instance, &debugMessenger, &device, &swapChain,
-                  swapChainImageViews);
+                  swapChainImageViews, vertShaderModule, fragShaderModule);
     cleanup(window);
   }
   catch (const std::exception& e)

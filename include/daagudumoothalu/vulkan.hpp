@@ -9,6 +9,7 @@
 #include <cstdint>    // Necessary for uint32_t
 #include <limits>     // Necessary for std::numeric_limits
 #include <algorithm>  // Necessary for std::clamp
+#include <fstream>
 
 #ifdef ENABLE_VALIDATION_LAYERS
 const bool enableValidationLayers = true;
@@ -41,12 +42,23 @@ void initVulkan(const std::vector<const char*>& validationLayers, char const* ti
                 const std::vector<const char*>& deviceExtensions, GLFWwindow* window,
                 VkSwapchainKHR& swapChain, std::vector<VkImage>& swapChainImages,
                 VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent,
-                std::vector<VkImageView>& swapChainImageViews);
+                std::vector<VkImageView>& swapChainImageViews,
+                VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule);
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
                       VkInstance& instance);
 
 void testVulkan();
+
+// graphics pipeline methods
+void createGraphicsPipeline(VkShaderModule vertShaderModule, VkShaderModule fragShaderModule,
+                            VkDevice device);
+
+void createShaderModule(const std::vector<char>& code, VkDevice device,
+                        VkShaderModule& shaderModule);
+
+// read binary file
+void readBinaryFile(const std::string& filename, std::vector<char>& buffer);
 
 // image views
 void createImageViews(VkDevice device, const std::vector<VkImage>& swapChainImages,
@@ -125,6 +137,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
                    VkDebugUtilsMessengerEXT* debugMessenger, VkDevice* device,
                    VkSwapchainKHR* swapChain,
-                   std::vector<VkImageView>& swapChainImageViews);
+                   std::vector<VkImageView>& swapChainImageViews,
+                    VkShaderModule vertShaderModule, VkShaderModule fragShaderModule);
 
 #endif  // DAAGUDUMOOTHALU_VULKAN_HPP

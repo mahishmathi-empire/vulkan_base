@@ -15,7 +15,8 @@ void initVulkan(const std::vector<const char*>& validationLayers, char const* ti
                 const std::vector<const char*>& deviceExtensions, GLFWwindow* window,
                 VkSwapchainKHR& swapChain, std::vector<VkImage>& swapChainImages,
                 VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent,
-                std::vector<VkImageView>& swapChainImageViews)
+                std::vector<VkImageView>& swapChainImageViews,
+                VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule)
 {
   createVkInstance(validationLayers, title, instance);
   setupDebugMessenger(instance, debugMessenger);
@@ -26,6 +27,67 @@ void initVulkan(const std::vector<const char*>& validationLayers, char const* ti
   createSwapChain(physicalDevice, device, surface, window, swapChain, swapChainImages,
                   swapChainImageFormat, swapChainExtent);
   createImageViews(device, swapChainImages, swapChainImageFormat, swapChainImageViews);
+  createGraphicsPipeline(vertShaderModule, fragShaderModule, device);
+}
+
+void createGraphicsPipeline(VkShaderModule vertShaderModule,
+                            VkShaderModule fragShaderModule, VkDevice device)
+{
+  std::vector<char> vertShaderCode;
+  std::vector<char> fragShaderCode;
+
+  readBinaryFile("../shaders/shader.vert.spv", vertShaderCode);
+  readBinaryFile("../shaders/shader.frag.spv", fragShaderCode);
+
+  createShaderModule(vertShaderCode, device, vertShaderModule);
+  createShaderModule(fragShaderCode, device, fragShaderModule);
+
+  VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+  vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+  vertShaderStageInfo.module = vertShaderModule;
+  vertShaderStageInfo.pName = "main";
+
+  VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+  fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  fragShaderStageInfo.module = fragShaderModule;
+  fragShaderStageInfo.pName = "main";
+
+  VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
+                                                    fragShaderStageInfo};
+}
+
+void createShaderModule(const std::vector<char>& code, VkDevice device,
+                        VkShaderModule& shaderModule)
+{
+  VkShaderModuleCreateInfo createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  createInfo.codeSize = code.size();
+  createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+  if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+  {
+    throw std::runtime_error("failed to create shader module!");
+  }
+}
+
+void readBinaryFile(const std::string& filename, std::vector<char>& buffer)
+{
+  std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+  if (!file.is_open())
+  {
+    throw std::runtime_error("failed to open file!");
+  }
+
+  size_t fileSize = (size_t)file.tellg();
+  buffer.resize(fileSize);
+
+  file.seekg(0);
+  file.read(buffer.data(), fileSize);
+
+  file.close();
 }
 
 void createImageViews(VkDevice device, const std::vector<VkImage>& swapChainImages,
@@ -51,7 +113,8 @@ void createImageViews(VkDevice device, const std::vector<VkImage>& swapChainImag
     createInfo.subresourceRange.baseArrayLayer = 0;
     createInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+    if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) !=
+        VK_SUCCESS)
     {
       throw std::runtime_error("failed to create image views!");
     }
@@ -559,7 +622,9 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 
 void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
                    VkDebugUtilsMessengerEXT* debugMessenger, VkDevice* device,
-                   VkSwapchainKHR* swapChain, std::vector<VkImageView>& swapChainImageViews)
+                   VkSwapchainKHR* swapChain,
+                   std::vector<VkImageView>& swapChainImageViews,
+                   VkShaderModule vertShaderModule, VkShaderModule fragShaderModule)
 {
   if (enableValidationLayers)
   {
@@ -574,6 +639,9 @@ void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
   vkDestroySwapchainKHR(*device, *swapChain, nullptr);
 
   vkDestroySurfaceKHR(*instance, *surface, nullptr);
+
+  vkDestroyShaderModule(*device, vertShaderModule, nullptr);
+  vkDestroyShaderModule(*device, fragShaderModule, nullptr);
 
   vkDestroyDevice(*device, nullptr);
 
