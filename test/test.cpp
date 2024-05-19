@@ -18,6 +18,7 @@ int main()
   const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
   std::vector<VkImage> swapChainImages;
+  std::vector<VkImageView> swapChainImageViews;
 
   try
   {
@@ -25,10 +26,11 @@ int main()
     initVulkan(validationLayers, "Daagudumoothalu", instance, debugMessenger,
                physicalDevice, device, surface, graphicsQueue, presentQueue,
                deviceExtensions, window, swapChain, swapChainImages, swapChainImageFormat,
-               swapChainExtent);
+               swapChainExtent, swapChainImageViews);
     testMath();
     mainLoop(window);
-    cleanupVulkan(&surface, &instance, &debugMessenger, &device, &swapChain);
+    cleanupVulkan(&surface, &instance, &debugMessenger, &device, &swapChain,
+                  swapChainImageViews);
     cleanup(window);
   }
   catch (const std::exception& e)

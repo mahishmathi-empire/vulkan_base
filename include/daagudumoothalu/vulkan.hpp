@@ -40,12 +40,18 @@ void initVulkan(const std::vector<const char*>& validationLayers, char const* ti
                 VkQueue& graphicsQueue, VkQueue& presentQueue,
                 const std::vector<const char*>& deviceExtensions, GLFWwindow* window,
                 VkSwapchainKHR& swapChain, std::vector<VkImage>& swapChainImages,
-                VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent);
+                VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent,
+                std::vector<VkImageView>& swapChainImageViews);
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
                       VkInstance& instance);
 
 void testVulkan();
+
+// image views
+void createImageViews(VkDevice device, const std::vector<VkImage>& swapChainImages,
+                      VkFormat swapChainImageFormat,
+                      std::vector<VkImageView>& swapChainImageViews);
 
 // swap chain methods
 bool checkDeviceExtensionSupport(VkPhysicalDevice device,
@@ -64,8 +70,8 @@ void chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* 
                       VkExtent2D& extent);
 
 void createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device,
-                     VkSurfaceKHR& surface, GLFWwindow* window,
-                     VkSwapchainKHR& swapChain, std::vector<VkImage>& swapChainImages,
+                     VkSurfaceKHR& surface, GLFWwindow* window, VkSwapchainKHR& swapChain,
+                     std::vector<VkImage>& swapChainImages,
                      VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent);
 
 // surface
@@ -118,6 +124,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 
 void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
                    VkDebugUtilsMessengerEXT* debugMessenger, VkDevice* device,
-                   VkSwapchainKHR* swapChain);
+                   VkSwapchainKHR* swapChain,
+                   std::vector<VkImageView>& swapChainImageViews);
 
 #endif  // DAAGUDUMOOTHALU_VULKAN_HPP
