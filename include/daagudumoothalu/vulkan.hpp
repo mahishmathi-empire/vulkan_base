@@ -43,7 +43,8 @@ void initVulkan(const std::vector<const char*>& validationLayers, char const* ti
                 VkSwapchainKHR& swapChain, std::vector<VkImage>& swapChainImages,
                 VkFormat& swapChainImageFormat, VkExtent2D& swapChainExtent,
                 std::vector<VkImageView>& swapChainImageViews,
-                VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule);
+                VkPipelineLayout& pipelineLayout, VkRenderPass& renderPass,
+                VkPipeline& graphicsPipeline);
 
 void createVkInstance(const std::vector<const char*>& validationLayers, char const* title,
                       VkInstance& instance);
@@ -51,11 +52,14 @@ void createVkInstance(const std::vector<const char*>& validationLayers, char con
 void testVulkan();
 
 // graphics pipeline methods
-void createGraphicsPipeline(VkShaderModule vertShaderModule, VkShaderModule fragShaderModule,
-                            VkDevice device);
+void createGraphicsPipeline(VkDevice device, VkPipelineLayout& pipelineLayout,
+                            VkRenderPass& renderPass, VkPipeline& graphicsPipeline);
 
 void createShaderModule(const std::vector<char>& code, VkDevice device,
                         VkShaderModule& shaderModule);
+
+void createRenderPass(VkDevice device, VkFormat swapChainImageFormat,
+                      VkRenderPass& renderPass);
 
 // read binary file
 void readBinaryFile(const std::string& filename, std::vector<char>& buffer);
@@ -138,6 +142,7 @@ void cleanupVulkan(VkSurfaceKHR* surface, VkInstance* instance,
                    VkDebugUtilsMessengerEXT* debugMessenger, VkDevice* device,
                    VkSwapchainKHR* swapChain,
                    std::vector<VkImageView>& swapChainImageViews,
-                    VkShaderModule vertShaderModule, VkShaderModule fragShaderModule);
+                   VkPipelineLayout* pipelineLayout, VkRenderPass* renderPass,
+                   VkPipeline* graphicsPipeline);
 
 #endif  // DAAGUDUMOOTHALU_VULKAN_HPP
