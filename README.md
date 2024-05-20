@@ -1,22 +1,4 @@
-# daagudumoothalu
-
-## English Version
-<details>
-<summary>Click to expand</summary>
-
-## Hide-and-seek in the kingdom of Mahishmathi
-
-</details>
-
-## Telugu Version
-<details>
-<summary>హుదా కా కసం, హసం కా హుకుం, ఖోలో సేసే</summary>
-
-## మాహిష్మతి సామ్రాజ్యంలో దాగుడుమూతలు
-
-దాగుడుమూతలు ఒక ప్రాచీన ఆటలు. ఇది ప్రాచీన భారత దేశంలో ప్రచలితమైన ఆటలలో ఒకటి.
-
-</details>
+# vulkan base
 
 ## OS
 
